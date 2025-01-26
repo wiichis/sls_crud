@@ -2,28 +2,35 @@ service: crud-serverless-users
 
 provider:
   name: aws
-  runtime: nodejs14.x
-  apiGateway:
-    apiKeys:
-      - crud-serverless-users-apikey
+  runtime: nodejs18.x
+  # apiGateway:
+  #   apiKeys:
+  #     - crud-serverless-users-apikey
   iam:
     role:
       statements:
-        - Effect: Allow
-          Action: 'dynamodb:*'
-          Resource: arn:aws:dynamodb:us-east-1:471893938953:table/usersTable
-        - Effect: Allow
-          Action: 's3:*'
-          Resource: arn:aws:s3:::bucket-serverless-course-123213/*
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeTable
+            Resource: arn:aws:dynamodb:us-east-1:065038859985:table/usersTable
+          - Effect: Allow
+            Action: 's3:*'
+            Resource: arn:aws:s3:::bucket-serverless-course-will07/*
+          - Effect: Allow
+            Action:
+              - ssm:PutParameter
+              - ssm:GetParameter
+              - ssm:DeleteParameter
+            Resource: arn:aws:ssm:us-east-1:065038859985:parameter/serverless-framework/*
   environment:
-    BUCKET: bucket-serverless-course-123213
-    SECRET_EGG: ${ssm:/SECRET_EGG}
+    BUCKET: bucket-serverless-course-will07
+    #SECRET_EGG: ${ssm:/SECRET_EGG}
 
 
-plugins:
-  - serverless-apigateway-service-proxy
-  - serverless-lift
-  # - serverless-domain-manager
+#plugins:
+  #- serverless-apigateway-service-proxy
+  #- serverless-lift
+  #- serverless-domain-manager
 
 package:
   individually: true
@@ -49,38 +56,39 @@ custom:
       migrate: true
     # Uncomment only if you already have a DynamoDB running locally
     # noStart: true
-  apiGatewayServiceProxies:
-    - sqs:
-        path: /likeuser
-        method: post
-        queueName: likequeue
-        cors: true
-        response:
-          template:
-            # `success` is used when the integration response is 200
-            success: |-
-              { "message": "accepted" }
-            # `clientError` is used when the integration response is 400
-            clientError: |-
-              { "message": "there is an error in your request" }
-            # `serverError` is used when the integration response is 500
-            serverError: |-
-              { "message": "there was an error handling your request" }
 
-constructs:
-    sqs-queue:
-        type: queue
-        batchSize: 1
-        worker:
-            handler: likeuser/handler.likeuser
-            reservedConcurrency: 1
-            package:
-              patterns:
-                - "likeuser/handler.js"
-        extensions:
-          queue:
-            Properties:
-              QueueName: likequeue
+  # apiGatewayServiceProxies:
+  #   - sqs:
+  #       path: /likeuser
+  #       method: post
+  #       queueName: likequeue
+  #       cors: true
+  #       response:
+  #         template:
+  #           # `success` is used when the integration response is 200
+  #           success: |-
+  #             { "message": "accepted" }
+  #           # `clientError` is used when the integration response is 400
+  #           clientError: |-
+  #             { "message": "there is an error in your request" }
+  #           # `serverError` is used when the integration response is 500
+  #           serverError: |-
+  #             { "message": "there was an error handling your request" }
+
+# constructs:
+#     sqs-queue:
+#         type: queue
+#         batchSize: 1
+#         worker:
+#             handler: likeuser/handler.likeuser
+#             reservedConcurrency: 1
+#             package:
+#               patterns:
+#                 - "likeuser/handler.js"
+#         extensions:
+#           queue:
+#             Properties:
+#               QueueName: likequeue
 
 functions:
   custom-authorizer:
@@ -168,17 +176,17 @@ functions:
         - "thumbnail/handler.js"
     events:
       - s3:
-          bucket: bucket-serverless-course-123213
+          bucket: bucket-serverless-course-will07
           event: s3:ObjectCreated:*
           existing: true
           rules:
-           - prefix: upload/
+            - prefix: upload/
 
 layers:
   base:
     name: "prd-dependencies"
     compatibleRuntimes:
-      - "nodejs14.x"
+      - "nodejs18.x"
     package:
       artifact: app/nodejs.zip
 
@@ -200,21 +208,21 @@ resources:
     S3Bucket:
       Type: 'AWS::S3::Bucket'
       Properties:
-        AccessControl: PublicRead
-        BucketName: bucket-serverless-course-123213
+        BucketName: bucket-serverless-course-will07
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
+
     SampleBucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket: !Ref S3Bucket
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Action:
-                - 's3:GetObject'
-              Effect: Allow
-              Resource: !Join
-                - ''
-                - - 'arn:aws:s3:::'
-                  - !Ref S3Bucket
-                  - /*
-              Principal: '*'
+          Type: AWS::S3::BucketPolicy
+          Properties:
+            Bucket: !Ref S3Bucket
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Principal: "*"
+                  Action: "s3:GetObject"
+                  Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
