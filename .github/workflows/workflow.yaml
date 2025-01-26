@@ -35,7 +35,7 @@ jobs:
           apt update -y && apt install zip -y
           zip -r nodejs.zip nodejs/
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: nodejsdeps
           path: nodejs.zip
@@ -58,7 +58,7 @@ jobs:
       if: steps.cached-npm-dependencies.outputs.cache-hit != 'true'
       run: 'npm install'
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         name: nodejsdeps
         path: app/
