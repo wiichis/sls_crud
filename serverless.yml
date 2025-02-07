@@ -24,14 +24,13 @@ provider:
             Resource: arn:aws:ssm:us-east-1:065038859985:parameter/serverless-framework/*
   environment:
     BUCKET: bucket-serverless-course-will07
-    #SECRET_EGG: ${ssm:/SECRET_EGG}
+    SECRET_EGG: ${ssm:/SECRET_EGG}
 
 
-#plugins:
-  #- serverless-apigateway-service-proxy
-  #- serverless-lift
-  #- serverless-domain-manager
-
+plugins:
+  - serverless-apigateway-service-proxy
+  - serverless-lift
+  
 package:
   individually: true
   patterns:
@@ -57,38 +56,38 @@ custom:
     # Uncomment only if you already have a DynamoDB running locally
     # noStart: true
 
-  # apiGatewayServiceProxies:
-  #   - sqs:
-  #       path: /likeuser
-  #       method: post
-  #       queueName: likequeue
-  #       cors: true
-  #       response:
-  #         template:
-  #           # `success` is used when the integration response is 200
-  #           success: |-
-  #             { "message": "accepted" }
-  #           # `clientError` is used when the integration response is 400
-  #           clientError: |-
-  #             { "message": "there is an error in your request" }
-  #           # `serverError` is used when the integration response is 500
-  #           serverError: |-
-  #             { "message": "there was an error handling your request" }
+  apiGatewayServiceProxies:
+    - sqs:
+        path: /likeuser
+        method: post
+        queueName: likequeue
+        cors: true
+        response:
+          template:
+            # `success` is used when the integration response is 200
+            success: |-
+              { "message": "accepted" }
+            # `clientError` is used when the integration response is 400
+            clientError: |-
+              { "message": "there is an error in your request" }
+            # `serverError` is used when the integration response is 500
+            serverError: |-
+              { "message": "there was an error handling your request" }
 
-# constructs:
-#     sqs-queue:
-#         type: queue
-#         batchSize: 1
-#         worker:
-#             handler: likeuser/handler.likeuser
-#             reservedConcurrency: 1
-#             package:
-#               patterns:
-#                 - "likeuser/handler.js"
-#         extensions:
-#           queue:
-#             Properties:
-#               QueueName: likequeue
+constructs:
+    sqs-queue:
+        type: queue
+        batchSize: 1
+        worker:
+            handler: likeuser/handler.likeuser
+            reservedConcurrency: 1
+            package:
+              patterns:
+                - "likeuser/handler.js"
+        extensions:
+          queue:
+            Properties:
+              QueueName: likequeue
 
 functions:
   custom-authorizer:
